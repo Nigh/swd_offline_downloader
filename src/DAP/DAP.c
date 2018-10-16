@@ -78,7 +78,7 @@ const char TargetDeviceVendor [] = TARGET_DEVICE_VENDOR;
 const char TargetDeviceName   [] = TARGET_DEVICE_NAME;
 #endif
 
-/*Ê¹ÄÜSWDÒý½ÅµÄÊ±ÖÓ*/
+/*ä½¿èƒ½SWDå¼•è„šçš„æ—¶é’Ÿ*/
 void SWD_PORT_RCC_INIT(void)
 {
 		if(PIN_SWDIO_TMS_PORT == GPIOA)	

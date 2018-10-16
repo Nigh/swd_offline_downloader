@@ -65,8 +65,8 @@ DAP Hardware I/O Pin Access Functions
 #define PIN_SWDIO_TMS			PIN_MASK(PIN_SWDIO_TMS_PIN)
 #define PIN_SWCLK_TCK			PIN_MASK(PIN_SWCLK_TCK_PIN)
 
-/*********************ÕâÀïÎªSWDÒý½Å¶¨Òå**********************
-*ÎÞÐèÅäÖÃÒý½ÅÊ±ÖÓ£¬Òý½ÅµÄÊ±ÖÓÔÚSWD_PORT_RCC_INIT()×Ô¶¯³õÊ¼»¯
+/*********************è¿™é‡Œä¸ºSWDå¼•è„šå®šä¹‰**********************
+*æ— éœ€é…ç½®å¼•è„šæ—¶é’Ÿï¼Œå¼•è„šçš„æ—¶é’Ÿåœ¨SWD_PORT_RCC_INIT()è‡ªåŠ¨åˆå§‹åŒ–
 *************************************************************/
 // SWDIO/TMS Pin
 #define PIN_SWDIO_TMS_PORT		GPIOB
@@ -77,7 +77,7 @@ DAP Hardware I/O Pin Access Functions
 #define PIN_SWCLK_TCK_PIN			6
 
 // nRESET Pin
-//#define PIN_nRESET_PORT     GPIOB   //Ô¤ÁôÓ²¼þ¸´Î»Òý½Å
+//#define PIN_nRESET_PORT     GPIOB   //é¢„ç•™ç¡¬ä»¶å¤ä½å¼•è„š
 //#define PIN_nRESET_PIN			0
 
 

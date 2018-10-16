@@ -923,7 +923,7 @@ __attribute__((weak)) void swd_set_target_reset(uint8_t asserted)
 */
 void swd_set_target_reset(uint8_t asserted)
 {
-    /* 本文件中对此函数的使用都是先 asserted=1 调用，延时后 asserted=0 调用，为了只调用一次所以只在第二次调用此函数时执行软件复位 */
+    /* 鏈枃浠朵腑瀵规鍑芥暟鐨勪娇鐢ㄩ兘鏄厛 asserted=1 璋冪敤锛屽欢鏃跺悗 asserted=0 璋冪敤锛屼负浜嗗彧璋冪敤涓�娆℃墍浠ュ彧鍦ㄧ浜屾璋冪敤姝ゅ嚱鏁版椂鎵ц杞欢澶嶄綅 */
     if(asserted == 0)
         {
             swd_write_word((uint32_t)&SCB->AIRCR, ((0x5FA << SCB_AIRCR_VECTKEY_Pos) | (SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk) | SCB_AIRCR_SYSRESETREQ_Msk));
@@ -1088,7 +1088,7 @@ uint8_t swd_set_target_state_sw(TARGET_RESET_STATE state)
     /* Calling swd_init prior to enterring RUN state causes operations to fail. */
     if(state != RUN)
         {
-            swd_init();   //这行不屏蔽的话，无法软件复位程序
+            swd_init();   //杩欒涓嶅睆钄界殑璇濓紝鏃犳硶杞欢澶嶄綅绋嬪簭
         }
 
     switch(state)

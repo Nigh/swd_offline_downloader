@@ -4,13 +4,13 @@
 #include "SWD_flash.h"
 #include "algo/STM32F10x_128.c"
 
-/*SWDÒı½Å¶¨ÒåÔÚDAP_config.hÎÄ¼şÖĞ*/
+/*SWDå¼•è„šå®šä¹‰åœ¨DAP_config.hæ–‡ä»¶ä¸­*/
 
 uint32_t Flash_Page_Size = 1024;
 uint32_t Flash_Start_Addr = 0x08000000;
 
-extern uint8_t STM32F1_demo_code[3604];   //ÑİÊ¾³ÌĞò1
-extern u8 binary[988];                    //ÑİÊ¾³ÌĞò2
+extern uint8_t STM32F1_demo_code[3604];   //æ¼”ç¤ºç¨‹åº1
+extern u8 binary[988];                    //æ¼”ç¤ºç¨‹åº2
 
 uint8_t buff[1024] = {0};
 
@@ -20,8 +20,8 @@ int main(void)
 {
     SerialInit();
     swd_init_debug();
-//	RCC_APB1PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	//  RCC_APB1PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	//  RCC_APB1PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     target_flash_init(Flash_Start_Addr);
 
     for(uint32_t addr = 0; addr < sizeof(binary); addr += 1024)
@@ -51,7 +51,7 @@ int main(void)
 
             printf("\r\n\r\n\r\n");
         }
-    swd_set_target_reset(0);//¸´Î»ÔËĞĞ
+    swd_set_target_reset(0);//å¤ä½è¿è¡Œ
 
     while(1)
         {
@@ -385,12 +385,12 @@ void SerialInit(void)
 }
 
 /******************************************************************************************************************************************
-* º¯ÊıÃû³Æ:	fputc()
-* ¹¦ÄÜËµÃ÷: printf()µ×²ãÊä³öº¯Êı
-* Êä    Èë: int ch	ÒªÊä³öµÄ×Ö·û
+* å‡½æ•°åç§°:	fputc()
+* åŠŸèƒ½è¯´æ˜: printf()åº•å±‚è¾“å‡ºå‡½æ•°
+* è¾“    å…¥: int ch	è¦è¾“å‡ºçš„å­—ç¬¦
 *			FILE *f
-* Êä    ³ö: ÎŞ
-* ×¢ÒâÊÂÏî: ÎŞ
+* è¾“    å‡º: æ— 
+* æ³¨æ„äº‹é¡¹: æ— 
 ******************************************************************************************************************************************/
 int fputc(int ch, FILE *f)
 {
