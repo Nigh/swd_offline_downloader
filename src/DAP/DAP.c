@@ -125,7 +125,7 @@ const GPIO_InitTypeDef INIT_SWCLK_OFF =
 void PORT_SWD_SETUP(void)
 {
 	
-	  SWD_PORT_RCC_INIT();
+	SWD_PORT_RCC_INIT();
 	
     PIN_SWDIO_TMS_PORT->BSRR = (PIN_SWDIO_TMS);
     GPIO_INIT(PIN_SWDIO_TMS_PORT, INIT_SWDIO_PINS);
@@ -1188,10 +1188,11 @@ void DAP_Setup(void)
 {
     // Default settings
     DAP_Data.debug_port  = 0U;
-    DAP_Data.fast_clock  = 0U;
-    DAP_Data.clock_delay = CLOCK_DELAY(DAP_DEFAULT_SWJ_CLOCK);
+    DAP_Data.fast_clock  = 1U;
+    // DAP_Data.clock_delay = CLOCK_DELAY(DAP_DEFAULT_SWJ_CLOCK);
+    DAP_Data.clock_delay = 1;
     DAP_Data.transfer.idle_cycles = 0U;
-    DAP_Data.transfer.retry_count = 100U;
+    DAP_Data.transfer.retry_count = 10U;
     DAP_Data.transfer.match_retry = 0U;
     DAP_Data.transfer.match_mask  = 0x00000000U;
     DAP_Data.swd_conf.turnaround  = 1U;
