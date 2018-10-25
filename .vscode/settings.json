@@ -1,0 +1,7 @@
+{
+    "C_Cpp.default.cStandard": "c99",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "files.associations": {
+        "swd_flash.h": "c"
+    },
+}
