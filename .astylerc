@@ -1,0 +1,11 @@
+
+# the astyle option for this project
+
+--mode=c
+
+--style=1tbs
+
+-pt4SxtxWwYMxgk1
+
+# no backup
+-n
