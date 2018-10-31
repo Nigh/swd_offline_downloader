@@ -1,12 +1,8 @@
 
 #include "usart_driver.h"
-#include "Driver_USART.h"
 
 __weak void USART1_Callback(uint32_t event) { ; }
 __weak void USART2_Callback(uint32_t event) { ; }
-
-extern ARM_DRIVER_USART Driver_USART1;
-extern ARM_DRIVER_USART Driver_USART2;
 
 void usart_init(void)
 {
