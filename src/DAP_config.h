@@ -73,8 +73,8 @@ DAP Hardware I/O Pin Access Functions
 #define PIN_SWDIO_TMS_PIN			6
 
 // SWCLK/TCK Pin
-#define PIN_SWCLK_TCK_PORT		GPIOA
-#define PIN_SWCLK_TCK_PIN			6
+#define PIN_SWCLK_TCK_PORT		GPIOB
+#define PIN_SWCLK_TCK_PIN			7
 
 // nRESET Pin
 //#define PIN_nRESET_PORT     GPIOB   //预留硬件复位引脚
