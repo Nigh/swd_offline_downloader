@@ -18,21 +18,21 @@ void flash_write_en(void)
 	flash_write_single(0x06);
 }
 
-bool flash_is_busy(void)
-{
-	uint8_t* read;
-	read = flash_read_reg();
-	if(read[1] & 0x01) {
-		return true;
-	} else {
-		return false;
-	}
-}
+// bool flash_is_busy(void)
+// {
+// 	uint8_t* read;
+// 	read = flash_read_reg();
+// 	if(read[1] & 0x01) {
+// 		return true;
+// 	} else {
+// 		return false;
+// 	}
+// }
 
-void flash_wait_idle(void)
-{
-	while(flash_is_busy()){ ; }
-}
+// void flash_wait_idle(void)
+// {
+// 	while(flash_is_busy()){ ; }
+// }
 
 void flash_write(uint8_t* content, uint32_t addr, uint16_t length)
 {
@@ -45,17 +45,17 @@ void flash_write(uint8_t* content, uint32_t addr, uint16_t length)
 	spi_write(buffer, length + 4);
 }
 
-void flash_read(uint8_t* buf, uint32_t addr, uint8_t length)
-{
-	uint8_t* read;
-	buffer[0] = 0x03;
-	buffer[1] = (addr >> 16) & 0xFF;
-	buffer[2] = (addr >> 8) & 0xFF;
-	buffer[3] = addr & 0xFF;
-	memset(buffer + 4, 0xFF, length);
-	read = spi0_write(buffer, length + 4);
-	memcpy(buf, read + 4, length);
-}
+// void flash_read(uint8_t* buf, uint32_t addr, uint8_t length)
+// {
+// 	uint8_t* read;
+// 	buffer[0] = 0x03;
+// 	buffer[1] = (addr >> 16) & 0xFF;
+// 	buffer[2] = (addr >> 8) & 0xFF;
+// 	buffer[3] = addr & 0xFF;
+// 	memset(buffer + 4, 0xFF, length);
+// 	read = spi0_write(buffer, length + 4);
+// 	memcpy(buf, read + 4, length);
+// }
 
 uint8_t dummy[0x20] __attribute__((section(".ARM.__at_0x20000000")));
 // void flash_direct_read(uint8_t* buf, uint32_t addr, uint16_t length)
@@ -77,26 +77,26 @@ uint8_t dummy[0x20] __attribute__((section(".ARM.__at_0x20000000")));
 // 	*(buf - 4) = buffer[7];
 // }
 
-uint8_t* flash_read_id(void)
-{
-	uint8_t* read;
-	buffer[0] = 0x4B;
-	buffer[1] = 0xFF;
-	buffer[2] = 0xFF;
-	buffer[3] = 0xFF;
-	buffer[4] = 0xFF;
-	read = spi0_write(buffer, 5 + 16);
-	return read;
-}
+// uint8_t* flash_read_id(void)
+// {
+// 	uint8_t* read;
+// 	buffer[0] = 0x4B;
+// 	buffer[1] = 0xFF;
+// 	buffer[2] = 0xFF;
+// 	buffer[3] = 0xFF;
+// 	buffer[4] = 0xFF;
+// 	read = spi0_write(buffer, 5 + 16);
+// 	return read;
+// }
 
-uint8_t* flash_read_reg(void)
-{
-	uint8_t* read;
-	buffer[0] = 0x05;
-	buffer[1] = 0xFF;
-	read = spi0_write(buffer, 2);
-	return read;
-}
+// uint8_t* flash_read_reg(void)
+// {
+// 	uint8_t* read;
+// 	buffer[0] = 0x05;
+// 	buffer[1] = 0xFF;
+// 	read = spi0_write(buffer, 2);
+// 	return read;
+// }
 
 void flash_page_erase(uint32_t addr)
 {
@@ -154,6 +154,17 @@ void flash_chip_erase_q(void)
 	buffer[buf_p] = 0x60;
 	spi_queue_push(buffer+buf_p,NULL,1,NULL);
 	buf_p = (buf_p+1)&0xFF;
+}
+
+void flash_sector_erase_q(uint32_t addr)
+{
+	flash_write_en_q();
+	buffer[buf_p] = 0x20;
+	buffer[(buf_p+1)&0xFF] = (addr >> 16) & 0xFF;
+	buffer[(buf_p+2)&0xFF] = (addr >> 8) & 0xFF;
+	buffer[(buf_p+3)&0xFF] = addr & 0xFF;
+	spi_queue_push(buffer+buf_p,NULL,4,NULL);
+	buf_p = (buf_p+4)&0xFF;
 }
 
 static bool isIdle(uint8_t* read)

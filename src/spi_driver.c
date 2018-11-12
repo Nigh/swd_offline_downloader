@@ -4,8 +4,8 @@
 #include "stm32f10x.h"
 #include "SPI_STM32F10x.h"
 #include "GPIO_STM32F10x.h"
-static uint8_t txBuffer[16];
-static uint8_t rxBuffer[0x100];
+// static uint8_t txBuffer[16];
+// static uint8_t rxBuffer[0x100];
 static uint8_t dataBuffer[16];
 
 
@@ -47,9 +47,11 @@ void spi_init(void)
                         ARM_SPI_SS_MASTER_SW |
                         // ARM_SPI_SS_MASTER_HW_OUTPUT |
                         // ARM_SPI_DATA_BITS(8), 10000000);
-                        // ARM_SPI_DATA_BITS(8), 8000000);
-                        ARM_SPI_DATA_BITS(8), 2000000);
-    Driver_SPI1.Transfer(txBuffer, rxBuffer, sizeof(txBuffer));
+                        // ARM_SPI_DATA_BITS(8), 8000000);  // 无中断产生？
+                        // ARM_SPI_DATA_BITS(8), 4000000);     // 有中断产生
+                        ARM_SPI_DATA_BITS(8), 2000000);     // 有中断产生
+    Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
+    // Driver_SPI1.Transfer(txBuffer, rxBuffer, sizeof(txBuffer));
 }
 
 void spi_write(uint8_t *buffer, uint16_t length)
@@ -68,9 +70,9 @@ void spi_wr(uint8_t *buffer, uint8_t *rev, uint16_t length)
     }
 }
 
-uint8_t* spi_write0(uint8_t *buffer, uint16_t length)
-{
-	Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_ACTIVE);
-    Driver_SPI1.Transfer(buffer, rxBuffer, length);
-    return rxBuffer;
-}
+// uint8_t* spi_write0(uint8_t *buffer, uint16_t length)
+// {
+// 	Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_ACTIVE);
+//     Driver_SPI1.Transfer(buffer, rxBuffer, length);
+//     return rxBuffer;
+// }

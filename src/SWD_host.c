@@ -906,7 +906,7 @@ uint8_t swd_init_debug(void)
 
     // call a target dependant function:
     // some target can enter in a lock state, this function can unlock these targets
-    //target_unlock_sequence();
+    // target_unlock_sequence();
 
     if(!swd_write_dp(DP_SELECT, 0))
         {
@@ -936,10 +936,10 @@ uint8_t swd_set_target_state_hw(TARGET_RESET_STATE state)
     int8_t ap_retries = 2;
 
     /* Calling swd_init prior to entering RUN state causes operations to fail. */
-    if(state != RUN)
-        {
-            swd_init();
-        }
+    // if(state != RUN)
+    //     {
+    //         swd_init();
+    //     }
 
     switch(state)
         {
