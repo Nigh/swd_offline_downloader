@@ -843,6 +843,44 @@ static uint8_t JTAG2SWD()
     return 1;
 }
 
+uint8_t swd_write_ap_for_unlock(uint32_t adr, uint32_t val)
+{
+    uint8_t data[4];
+    uint8_t req, ack;
+
+    // if(!swd_write_dp(DP_SELECT, 0x1))
+    //     {
+    //         return 0;
+    //     }
+    req = SWD_REG_AP | SWD_REG_W | SWD_REG_ADR(adr);
+    int2array(data, val, 4);
+    if(swd_transfer_retry(req, (uint32_t *)data) != 0x01)
+        {
+            return 0;
+        }
+    return 1;
+    // req = SWD_REG_DP | SWD_REG_R | SWD_REG_ADR(DP_RDBUFF);
+    // ack = swd_transfer_retry(req, NULL);
+    // return (ack == 0x01);
+}
+
+void target_unlock_sequence(void)
+{
+    // swd_read_dp(DP_IDCODE,&_);
+    // swd_read_dp(DP_CTRL_STAT,&_);
+    // swd_write_dp(DP_CTRL_STAT,0x50000000);
+    // swd_read_dp(DP_IDCODE,&_);
+    // swd_read_dp(DP_CTRL_STAT,&_);
+    swd_write_dp(DP_CTRL_STAT,0x50000000);
+    delaymS(7);
+
+    swd_write_dp(DP_SELECT,0x01000000);
+    delaymS(7);
+
+    swd_write_ap_for_unlock(0x04,0x00000001);
+    delaymS(500);
+}
+
 uint8_t swd_init_debug(void)
 {
     uint32_t tmp = 0;
@@ -906,7 +944,7 @@ uint8_t swd_init_debug(void)
 
     // call a target dependant function:
     // some target can enter in a lock state, this function can unlock these targets
-    // target_unlock_sequence();
+    target_unlock_sequence();
 
     if(!swd_write_dp(DP_SELECT, 0))
         {
@@ -1088,7 +1126,7 @@ uint8_t swd_set_target_state_sw(TARGET_RESET_STATE state)
     /* Calling swd_init prior to enterring RUN state causes operations to fail. */
     if(state != RUN)
         {
-            swd_init();   //这行不屏蔽的话，无法软件复位程序
+            // swd_init();   //这行不屏蔽的话，无法软件复位程序
         }
 
     switch(state)

@@ -23,7 +23,7 @@ typedef struct
 
 extern uint8_t sq_w;
 extern uint8_t sq_r;
-#define SPI_QUEUE_LENGTH 0x40
+#define SPI_QUEUE_LENGTH 0x10
 extern sSPI_QUEUE spi_queue[];
 void spi_queue_push(uint8_t *buffer, uint8_t *rev, uint16_t length,bool (*callback)(uint8_t *r));
 void spi_queue_dispatch(void);
