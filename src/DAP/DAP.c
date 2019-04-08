@@ -1188,7 +1188,7 @@ void DAP_Setup(void)
 {
     // Default settings
     DAP_Data.debug_port  = 0U;
-    DAP_Data.fast_clock  = 1U;
+    DAP_Data.fast_clock  = 0U;
     // DAP_Data.clock_delay = CLOCK_DELAY(DAP_DEFAULT_SWJ_CLOCK);
     DAP_Data.clock_delay = 1;
     DAP_Data.transfer.idle_cycles = 0U;
