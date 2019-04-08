@@ -336,6 +336,57 @@ static uint8_t swd_read_block(uint32_t address, uint8_t *data, uint32_t size)
     ack = swd_transfer_retry(req, (uint32_t *)data);
     return (ack == 0x01);
 }
+uint8_t swd_read_block_1(uint32_t address, uint8_t *data, uint32_t size)
+{
+    uint8_t tmp_in[4], req, ack;
+    uint32_t size_in_words;
+    uint32_t i;
+
+    if(size == 0)
+        {
+            return 0;
+        }
+
+    size_in_words = size / 4;
+
+    if(!swd_write_ap(AP_CSW, CSW_VALUE | CSW_SIZE32))
+        {
+            return 0;
+        }
+
+    // TAR write
+    req = SWD_REG_AP | SWD_REG_W | AP_TAR;
+    int2array(tmp_in, address, 4);
+
+    if(swd_transfer_retry(req, (uint32_t *)tmp_in) != DAP_TRANSFER_OK)
+        {
+            return 0;
+        }
+
+    // read data
+    req = SWD_REG_AP | SWD_REG_R | AP_DRW;
+
+    // initiate first read, data comes back in next read
+    if(swd_transfer_retry(req, NULL) != 0x01)
+        {
+            return 0;
+        }
+
+    for(i = 0; i < (size_in_words - 1); i++)
+        {
+            if(swd_transfer_retry(req, (uint32_t *)data) != DAP_TRANSFER_OK)
+                {
+                    return 0;
+                }
+
+            data += 4;
+        }
+
+    // read last word
+    req = SWD_REG_DP | SWD_REG_R | SWD_REG_ADR(DP_RDBUFF);
+    ack = swd_transfer_retry(req, (uint32_t *)data);
+    return (ack == 0x01);
+}
 
 // Read target memory.
 static uint8_t swd_read_data(uint32_t addr, uint32_t *val)

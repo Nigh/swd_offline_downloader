@@ -42,7 +42,7 @@ bool volatile program_state = false;
 bool volatile program_wait = false;
 void program_from_flash(void);
 void uart_packet_send(uint8_t cmd,uint8_t length,uint8_t* content);
-	
+
 void power_manage(void)
 {
 	// __WFI();
@@ -476,6 +476,21 @@ void swd_nrf52_recover(void)
     // delaymS(1);
 }
 
+static const uint8_t UICR[8]={0x00,0x80,0x07,0x00,0x00,0xE0,0x07,0x00};
+#define UICR_addr 0x10001014
+bool UICR_check(void)
+{
+    uint8_t buff[0x10];
+    if(!swd_read_block_1(UICR_addr, buff, 8)){
+        return false;
+    }
+    for(int i=0; i<8; i++){
+        if(buff[i]!=UICR[i]){
+            return false;
+        }
+    }
+    return true;
+}
 // 开始烧录程序后，关闭上传程序的串口
 static bool upload_stat = true;
 #define swd_exit() program_state = false; swd_off()
@@ -530,6 +545,16 @@ void program_from_flash(void){
         }else{
             uint8_t sn=0;
             uint32_t addr;
+            _err_cnt = 0;
+            while(!UICR_check()){
+                err_check();
+                if(target_flash_program_page(UICR_addr, UICR, 8)!=ERROR_SUCCESS){
+                    delaymS(100);
+                    target_flash_erase_sector(UICR_addr);
+                    delaymS(300);
+                }
+            }
+
             while(1){
                 swd_process();
                 // 读取校验和
