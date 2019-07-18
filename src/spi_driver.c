@@ -25,9 +25,10 @@ void spi_init(void)
                         // ARM_SPI_SS_MASTER_HW_OUTPUT |
                         // ARM_SPI_DATA_BITS(8), 10000000);
                         // ARM_SPI_DATA_BITS(8), 8000000);  // 无中断产生？
-                        ARM_SPI_DATA_BITS(8), 4000000);  // 偶尔无中断产生
+                        // ARM_SPI_DATA_BITS(8), 4000000);  // 偶尔无中断产生
                         // ARM_SPI_DATA_BITS(8), 2000000);  // 偶尔产生overflow错误
-                        // ARM_SPI_DATA_BITS(8), 500000);     // 
+                        // ARM_SPI_DATA_BITS(8), 1000000);     // 
+                        ARM_SPI_DATA_BITS(8), 500000);     // 
     Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
     // Driver_SPI1.Transfer(txBuffer, rxBuffer, sizeof(txBuffer));
 }
