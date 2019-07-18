@@ -25,21 +25,31 @@ void spi_init(void)
                         // ARM_SPI_SS_MASTER_HW_OUTPUT |
                         // ARM_SPI_DATA_BITS(8), 10000000);
                         // ARM_SPI_DATA_BITS(8), 8000000);  // 无中断产生？
-                        // ARM_SPI_DATA_BITS(8), 4000000);  // 偶尔无中断产生
-                        ARM_SPI_DATA_BITS(8), 2000000);     // 有中断产生
+                        ARM_SPI_DATA_BITS(8), 4000000);  // 偶尔无中断产生
+                        // ARM_SPI_DATA_BITS(8), 2000000);  // 偶尔产生overflow错误
+                        // ARM_SPI_DATA_BITS(8), 500000);     // 
     Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
     // Driver_SPI1.Transfer(txBuffer, rxBuffer, sizeof(txBuffer));
+}
+
+void spi_uninit(void)
+{
+    // GPIO_PinWrite(RED_LED,1);
+    // GPIO_PinConfigure(RED_LED,GPIO_OUT_PUSH_PULL,GPIO_MODE_OUT2MHZ);
+	// Driver_SPI1.Uninitialize();
 }
 
 void spi_write(uint8_t *buffer, uint16_t length)
 {
 	Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_ACTIVE);
+	// Delayms(1);
     Driver_SPI1.Send(buffer, length);
 }
 
 void spi_wr(uint8_t *buffer, uint8_t *rev, uint16_t length)
 {
 	Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_ACTIVE);
+	// Delayms(1);
     if(rev!=NULL){
         Driver_SPI1.Transfer(buffer, rev, length);
     }else{

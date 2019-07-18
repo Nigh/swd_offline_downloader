@@ -43,6 +43,8 @@ bool volatile program_wait = false;
 void program_from_flash(void);
 void uart_packet_send(uint8_t cmd,uint8_t length,uint8_t* content);
 
+uint8_t self_remac = 0; // 离主机的位置，越小越远
+
 void power_manage(void)
 {
 	// __WFI();
@@ -231,7 +233,7 @@ int main(void)
     rtc_config();
     NVIC_config();
 
-    spi_init();
+    // spi_init();
     usart_init();
     Driver_USART1.Receive(rxBuffer, sizeof(rxBuffer));
     Driver_USART2.Receive(rxBuffer2, sizeof(rxBuffer2));
@@ -302,27 +304,79 @@ void swd_success(void)
 
 static uint8_t _buf1[0x200] __attribute__((section(".ARM.__at_0x20000020")));
 static volatile uint8_t _buf2[0x10];
+static uint8_t* _p_buf2=(uint8_t*)_buf2;
 uint8_t flash_WE = 0x06;
 uint8_t flash_ERASE = 0x60;
 
 #define sn_block_size 0x10
-#define flash_simple_write(a,b,l) program_wait = true;spi_wr(a,b,l);while(program_wait)
+#define flash_simple_write(a,b,l) spi_init();\
+program_wait = true;spi_wr(a,b,l);while(program_wait){__nop();}\
+spi_uninit()
 #define flash_write_enable() flash_simple_write(&flash_WE,NULL,1)
-#define flash_wait_idle_simple() _buf1[0x104] = 0x05;\
-    _buf1[0x105] = 0xFF;\
-    do{\
-        _buf2[1] = 0x00;\
-        flash_simple_write(_buf1+0x104,_buf2,2);\
-    }while(_buf2[1]&0x1)
+void flash_wait_idle_simple(void){
+    uint8_t i=0;
+    _buf1[0x104] = 0x05;
+    _buf1[0x105] = 0xFF;
+    do{
+        _buf2[1] = 0x00;
+        flash_simple_write(_buf1+0x104,_p_buf2,2);
+    }while((_buf2[1]&0x1)||(i++<3));
+}
+
+// #define flash_wait_idle_simple() _buf1[0x104] = 0x05;\
+//     _buf1[0x105] = 0xFF;\
+//     do{\
+//         _buf2[1] = 0x00;\
+// 		/*Delayms(1);*/\
+//         flash_simple_write(_buf1+0x104,_p_buf2,2);\
+//     }while(_buf2[1]&0x1)
 
 void flash_init(void){
     static uint8_t _[1]={0x01};
+    uint8_t _3[3]={0x00};
+    uint8_t RDSR1[2] ={0x05};
+    uint8_t RDSR2[2] ={0x35};
+    uint8_t WRSR[3]={0x00};
+    uint8_t RESUME1=0x7A;
+    uint8_t RESUME2=0x30;
+    uint8_t RSTEN=0x66;
+    uint8_t RST=0x99;
+    
+    uint8_t test_write[10]={0x02,0x03,0x70,0x00,0x01,0x02,0x03,0x04,0x05,0x06};
+    uint8_t test_read_w[10]={0x03,0x03,0x70,0x00,0x01,0x02,0x03,0x04,0x05,0x06};
+    // uint8_t test_read_r[10]={0x02,0x03,0x70,0x00,0x01,0x02,0x03,0x04,0x05,0x06};
     // Driver_USART1.Send(_, 5);
     // flash_chip_erase();
+    spi_init();
+    Delayms(2);
     program_state = true;
+    flash_simple_write(&RSTEN, NULL, 1);
+    flash_simple_write(&RST, NULL, 1);
+    Delayms(1);
+    // flash_simple_write(RDSR1, _3, 2);
+    // flash_simple_write(RDSR2, _3, 2);
+    // if(_3[1]&0x84){
+    //     flash_simple_write(&RESUME1, NULL, 1);
+    //     flash_simple_write(&RESUME2, NULL, 1);
+    //     flash_simple_write(RDSR1, _3, 2);
+    //     flash_simple_write(RDSR2, _3, 2);
+    // }
     flash_write_enable();
     flash_simple_write(&flash_ERASE,NULL,1);
     flash_wait_idle_simple();
+
+    // flash_simple_write(test_read_w, NULL, 10);
+    // flash_write_enable();
+    // flash_simple_write(test_write, NULL, 10);
+    // flash_wait_idle_simple();
+    // flash_simple_write(test_read_w, NULL, 10);
+    // test_write[2] = 0x60;
+    // test_read_w[2] = 0x60;
+    // flash_write_enable();
+    // flash_simple_write(test_write, NULL, 10);
+    // flash_wait_idle_simple();
+    // flash_simple_write(test_read_w, NULL, 10);
+
     program_state = false;
     uart_packet_send(0x7f,0x01,_);
 }
@@ -397,11 +451,13 @@ void flash_write_block_simple(sUART_EVT* ue, uint16_t size){
         _[0]=0xFF;
         _[1]=checksum[0];_[2]=checksum[1];_[3]=checksum[2];_[4]=checksum[3];
         _[5]=_buf2[4];_[6]=_buf2[5];_[7]=_buf2[6];_[8]=_buf2[7];
+        delaymS(8-self_remac);
         uart_packet_send(0x75,0x09,_);
         // Driver_USART1.Send(_buf2, 9);
     }else{
         _[0]=sn;
         _[1]=0x01;
+        delaymS(8-self_remac);
         uart_packet_send(0x75,0x02,_);
         // Driver_USART1.Send(_buf1, 5);
     }
@@ -522,8 +578,10 @@ void program_from_flash(void){
         _buf1[2] = (_addr_head >> 8) & 0xFF;
         _buf1[3] = _addr_head & 0xFF;
         program_wait = true;
+        spi_init();
         spi_wr(_buf1,_buf2,8);
         while(program_wait);
+        spi_uninit();
         if(_buf2[5]!=0xFF){
             // Driver_USART1.Send(_buf2+4, 4);
             _addr_bin = _buf2[4]*0x1000;
@@ -533,8 +591,10 @@ void program_from_flash(void){
             _buf1[2] = (_addr_bin >> 8) & 0xFF;
             _buf1[3] = _addr_bin & 0xFF;
             program_wait = true;
+            spi_init();
             spi_wr(_buf1,buff,0x1000+4);
             while(program_wait);
+            spi_uninit();
             _err_cnt = 0;
             while(target_flash_program_page(Flash_Start_Addr + _addr_prog, &buff[4], sector_size)!=ERROR_SUCCESS){
                 delaymS(100);
@@ -692,6 +752,7 @@ void uart_route_process(uint8_t* a,uint8_t l)
             p+=1;
         }
         if(p>=l-1) return;
+        if(self_remac<a[p+1]) self_remac = a[p+1];
         a[p+1]+=1;
         p+=a[p+3]+5;
     }
@@ -757,13 +818,16 @@ void USART2_Callback(uint32_t event)
     }
 }
 
-void SPI1_Callback(uint32_t event)
+void SPI1_Callback(volatile uint32_t event)
 {
     if(event & ARM_SPI_EVENT_TRANSFER_COMPLETE)
     {
         Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
         program_wait = false;
-    }
+    }else{
+		__ASM("nop");
+		if(event==1)event &= 0;
+	}
 }
 
 int fputc(int ch, FILE *f)

@@ -9,6 +9,7 @@ extern ARM_DRIVER_SPI Driver_SPI1;
 extern bool spi_flag;
 
 void spi_init(void);
+void spi_uninit(void);
 void spi_write(uint8_t *buffer, uint16_t length);
 void spi_wr(uint8_t *buffer, uint8_t *rev, uint16_t length);
 uint8_t* spi_write0(uint8_t *buffer, uint16_t length);
