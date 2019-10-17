@@ -34,6 +34,7 @@ extern ARM_DRIVER_USART Driver_USART1;
 extern ARM_DRIVER_USART Driver_USART2;
 
 static uint8_t rxBuffer[sector_size+0x10] = {0};
+static uint8_t rxBuffer_swap[sector_size+0x10] = {0};
 static uint8_t txBuffer[0x100] = {0};
 static uint8_t rxBuffer2[0x80] = {0};
 static uint8_t txBuffer2[0x80] = {0};
@@ -193,6 +194,7 @@ void EXTI0_IRQHandler(void)
 }
 
 static volatile uint8_t key_d=0;
+uint8_t uart_timeout = 2;
 void rtc_2hz_routine(void){
     static bool tic=false;
     tic=!tic;
@@ -217,8 +219,18 @@ void TIM3_IRQHandler(void)
 	}
 	TIM_ClearITPendingBit(TIM3, TIM_FLAG_Update);
 }
+uint16_t buffer_used = 0;
+void uart_parser(uint16_t max);
 void timer_10ms_routine(void){
-
+    if(uart_timeout>0){
+        uart_timeout -= 1;
+        if(uart_timeout == 0 && buffer_used>0){
+            uart_parser(buffer_used);
+            buffer_used = 0;
+            Driver_USART1.Control(ARM_USART_ABORT_RECEIVE, 1);
+            Driver_USART1.Receive(rxBuffer, 0x1010);
+        }
+    }
 }
 uint16_t up_flag=0;
 bool spi_flag=false;
@@ -309,9 +321,20 @@ uint8_t flash_WE = 0x06;
 uint8_t flash_ERASE = 0x60;
 
 #define sn_block_size 0x10
-#define flash_simple_write(a,b,l) spi_init();\
+//#define flash_simple_write(a,b,l) spi_init();\
 program_wait = true;spi_wr(a,b,l);while(program_wait){__nop();}\
 spi_uninit()
+
+void flash_simple_write(uint8_t *a,uint8_t *b,uint16_t l)
+{
+	spi_init();
+	// program_wait = true;
+	spi_wr(a,b,l);
+	// while(program_wait)
+	// {__nop();}
+	// spi_uninit();
+}
+
 #define flash_write_enable() flash_simple_write(&flash_WE,NULL,1)
 void flash_wait_idle_simple(void){
     uint8_t i=0;
@@ -427,22 +450,38 @@ void flash_write_block_simple(sUART_EVT* ue, uint16_t size){
     _buf1[3] = (0x1F0000+sn*sn_block_size+4) & 0xFF;
     flash_simple_write(_buf1,_buf2,8);
 
-    // 读取内容
-    _buf1[0] = 0x03;
-    _buf1[1] = ((sn*0x1000) >> 16) & 0xFF;
-    _buf1[2] = ((sn*0x1000) >> 8) & 0xFF;
-    _buf1[3] = (sn*0x1000) & 0xFF;
-    flash_simple_write(_buf1,buff,0x1004);
+    // // 读取内容
+    // _buf1[0] = 0x03;
+    // _buf1[1] = ((sn*0x1000) >> 16) & 0xFF;
+    // _buf1[2] = ((sn*0x1000) >> 8) & 0xFF;
+    // _buf1[3] = (sn*0x1000) & 0xFF;
+    // flash_simple_write(_buf1,buff,0x1004);
+    // // 计算校验和
+    // uint8_t checksum[4]={0x00,0xFF,0xAA,0x55};
+    // uint8_t offset=0;
+    // for(j=0;j<0x1000;j++){
+    //     if(buff[j+4]!=0xFF){
+    //         offset+=buff[j+4];
+    //         checksum[offset&0x03]^=buff[j+4];
+    //     }
+    // }
+
     // 计算校验和
     uint8_t checksum[4]={0x00,0xFF,0xAA,0x55};
     uint8_t offset=0;
-    for(j=0;j<0x1000;j++){
-        if(buff[j+4]!=0xFF){
-            offset+=buff[j+4];
-            checksum[offset&0x03]^=buff[j+4];
+    for(i=0;i<4;i++){
+        _buf1[0] = 0x03;
+        _buf1[1] = ((sn*0x1000+i*0x400) >> 16) & 0xFF;
+        _buf1[2] = ((sn*0x1000+i*0x400) >> 8) & 0xFF;
+        _buf1[3] = (sn*0x1000+i*0x400) & 0xFF;
+        flash_simple_write(_buf1,buff,0x404);
+        for(j=0;j<0x400;j++){
+            if(buff[j+4]!=0xFF){
+                offset+=buff[j+4];
+                checksum[offset&0x03]^=buff[j+4];
+            }
         }
     }
-
     swd_process();
     if((checksum[0]!=_buf2[4])
     ||(checksum[1]!=_buf2[5])
@@ -577,10 +616,10 @@ void program_from_flash(void){
         _buf1[1] = (_addr_head >> 16) & 0xFF;
         _buf1[2] = (_addr_head >> 8) & 0xFF;
         _buf1[3] = _addr_head & 0xFF;
-        program_wait = true;
+        // program_wait = true;
         spi_init();
         spi_wr(_buf1,_buf2,8);
-        while(program_wait);
+        // while(program_wait);
         spi_uninit();
         if(_buf2[5]!=0xFF){
             // Driver_USART1.Send(_buf2+4, 4);
@@ -590,10 +629,10 @@ void program_from_flash(void){
             _buf1[1] = (_addr_bin >> 16) & 0xFF;
             _buf1[2] = (_addr_bin >> 8) & 0xFF;
             _buf1[3] = _addr_bin & 0xFF;
-            program_wait = true;
+            // program_wait = true;
             spi_init();
             spi_wr(_buf1,buff,0x1000+4);
-            while(program_wait);
+            // while(program_wait);
             spi_uninit();
             _err_cnt = 0;
             while(target_flash_program_page(Flash_Start_Addr + _addr_prog, &buff[4], sector_size)!=ERROR_SUCCESS){
@@ -696,8 +735,13 @@ void uart_parser(uint16_t max)
                 altnative_evt_put(flash_read_id);
                 break;
                 case 0x75:
-                uart_evt.data = rxBuffer+4+i;
-                app_sched_event_put(&uart_evt,sizeof(uart_evt),(app_sched_event_handler_t)flash_write_block_simple);
+                if(buffer_used>=0x1006) {
+                    buffer_used = 0;
+                    uart_evt.data = rxBuffer+i+4;
+                    app_sched_event_put(&uart_evt,sizeof(uart_evt),(app_sched_event_handler_t)flash_write_block_simple);
+                }else{
+                    Driver_USART1.Receive(rxBuffer+buffer_used, 0x1000);
+                }
                 return;
                 case 0x74:
                 uart_evt.data = rxBuffer+i;
@@ -721,14 +765,23 @@ void uart_parser(uint16_t max)
 
 void USART1_Callback(uint32_t event)
 {
+    sUART_EVT uart_evt;
     if(event & ARM_USART_EVENT_RX_TIMEOUT)
     {
-        Driver_USART1.Control(ARM_USART_ABORT_RECEIVE, 1);
+        // Driver_USART1.Control(ARM_USART_ABORT_RECEIVE, 1);
         uint32_t length = Driver_USART1.GetRxCount();
+        buffer_used += length;
         // memcpy(txBuffer, rxBuffer, length);
         // Driver_USART1.Send(txBuffer, length);
-        Driver_USART1.Receive(rxBuffer, sizeof(rxBuffer));
-        uart_parser(length);
+        // if(uart_timeout==0){
+        //     uart_parser(buffer_used);
+        //     buffer_used = 0;
+        // }
+        // if(!Driver_USART1.GetStatus().rx_busy){
+        //     buffer_used = 0;
+            // Driver_USART1.Receive(rxBuffer+buffer_used, 0x1010);
+            uart_timeout = 10;
+        // }
     }
 }
 
@@ -822,7 +875,8 @@ void SPI1_Callback(volatile uint32_t event)
 {
     if(event & ARM_SPI_EVENT_TRANSFER_COMPLETE)
     {
-        Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
+        // Driver_SPI1.Control(ARM_SPI_CONTROL_SS, ARM_SPI_SS_INACTIVE);
+        GPIO_PinWrite(GPIOA,4,1);
         program_wait = false;
     }else{
 		__ASM("nop");
